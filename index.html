@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>TicTacToe in JavaScript</title>
+        <style type="text/css">
+            html,
+            body {
+                font-family: Arial;
+                margin: 0;
+                padding: 0;
+                background-color: #faf8ef;
+                text-align: center;
+            }
+
+            table {
+                border-collapse: collapse;
+                border: 4px solid #374047;
+                margin: 50px auto;
+                margin-top: 40px;
+            }
+
+            table td {
+                padding: 15px 20px;
+                border: 2px solid #374047;
+                width: 50px;
+                height: 50px;
+                text-align: center;
+                font-size: 20px;
+                background-color: white;
+                cursor: pointer;
+            }
+
+            table td:hover {
+                cursor: pointer;
+                background-color: rgba(255, 255, 255, 0.2);
+            }
+
+            .overlay {
+                padding-top: 40px;
+                font-weight: bold;
+                font-size:20px;
+            }
+
+            .spinner {
+                visibility: hidden;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div class="overlay"></div>
+
+            <div>
+                Current Player: <span id="currentPlayer">X (You)</span>
+                <svg class="spinner" width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <style>
+                        .spinner_Wezc {
+                            transform-origin: center;
+                            animation: spinner_Oiah 0.75s step-end infinite;
+                        }
+                        @keyframes spinner_Oiah {
+                            8.3% {
+                                transform: rotate(30deg);
+                            }
+                            16.6% {
+                                transform: rotate(60deg);
+                            }
+                            25% {
+                                transform: rotate(90deg);
+                            }
+                            33.3% {
+                                transform: rotate(120deg);
+                            }
+                            41.6% {
+                                transform: rotate(150deg);
+                            }
+                            50% {
+                                transform: rotate(180deg);
+                            }
+                            58.3% {
+                                transform: rotate(210deg);
+                            }
+                            66.6% {
+                                transform: rotate(240deg);
+                            }
+                            75% {
+                                transform: rotate(270deg);
+                            }
+                            83.3% {
+                                transform: rotate(300deg);
+                            }
+                            91.6% {
+                                transform: rotate(330deg);
+                            }
+                            100% {
+                                transform: rotate(360deg);
+                            }
+                        }
+                    </style>
+                    <g class="spinner_Wezc">
+                        <circle cx="12" cy="2.5" r="1.5" opacity=".5" />
+                        <circle cx="16.75" cy="3.77" r="1.5" opacity=".7" />
+                    </g>
+                </svg>
+            </div>
+
+            <table>
+                <tr>
+                    <td data-position="1"></td>
+                    <td data-position="2"></td>
+                    <td data-position="3"></td>
+                </tr>
+                <tr>
+                    <td data-position="4"></td>
+                    <td data-position="5"></td>
+                    <td data-position="6"></td>
+                </tr>
+                <tr>
+                    <td data-position="7"></td>
+                    <td data-position="8"></td>
+                    <td data-position="9"></td>
+                </tr>
+            </table>
+
+            <button id="restartGame">Restart Game</button>
+        </div>
+
+        <script type="text/javascript" src="js/board.js"></script>
+        <script type="text/javascript" src="js/player.js"></script>
+
+        <script type="text/javascript">
+            var board = new Board(),
+                player1 = new Player("X");
+
+            let worker = new Worker("/js/agentWorker.js");
+
+            let currentPlayer = player1;
+
+            worker.onmessage = function (e) {
+                if (e.data) {
+                    board.setState(e.data);
+                }
+
+                updateBoard();
+                currentPlayer = player1;
+                updateCurrentPlayer();
+            };
+
+            const updateCurrentPlayer = () => {
+                document.getElementById("currentPlayer").textContent = currentPlayer === player1 ? "X (You)" : "O (AI) Thinking...";
+                document.querySelector(".spinner").style.visibility = currentPlayer === player1 ? "hidden" : "visible";
+            };
+
+            const updateBoard = () => {
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        document.querySelector(`td[data-position="${i * 3 + j + 1}"]`).textContent =
+                            board.getBoard()[i][j] === -1 ? "X" : board.getBoard()[i][j] === 1 ? "O" : "";
+                    }
+                }
+
+                if (board.getWinner()) {
+                    document.querySelector(".overlay").textContent = `The winner is ${board.getWinner() === -1 ? "X" : "O"}`;
+                } else if (board.staleMate()) {
+                    document.querySelector(".overlay").textContent = "Stalemate!";
+                }
+            };
+
+            document.addEventListener(
+                "click",
+                async function (evt) {
+                    if (evt.target.tagName === "TD" && currentPlayer === player1) {
+                        await player1.createMove(board, +evt.target.getAttribute("data-position"));
+
+                        currentPlayer = null;
+
+                        updateBoard();
+
+                        updateCurrentPlayer();
+
+                        worker.postMessage(board.getBoard());
+                    }
+                },
+                false
+            );
+
+            document.getElementById("restartGame").addEventListener("click", () => {
+                board = new Board();
+                updateBoard();
+                document.querySelector(".overlay").textContent = "";
+                currentPlayer = player1;
+                updateCurrentPlayer();
+            });
+        </script>
+   
+    </body>
+</html>
