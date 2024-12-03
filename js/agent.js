@@ -1,4 +1,3 @@
-
 var minVal = -5000,
     maxVal = 5000;
 
@@ -42,9 +41,9 @@ class Agent {
         var winner = this.currentBoard.getWinner();
 
         if (winner === "O") {
-            return +1;
+            return 10 - depth;
         } else if (winner === "X") {
-            return -1;
+            return depth - 10;
         } else if (!possibleMoves.length) {
             return 0;
         }

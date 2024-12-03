@@ -136,12 +136,15 @@
 
             let currentPlayer = player1;
 
+            let gameFinished = false;
+
             worker.onmessage = function (e) {
                 if (e.data) {
                     board.setState(e.data);
                 }
 
                 updateBoard();
+
                 currentPlayer = player1;
                 updateCurrentPlayer();
             };
@@ -160,16 +163,20 @@
                 }
 
                 if (board.getWinner()) {
+                    gameFinished = true;
                     document.querySelector(".overlay").textContent = `The winner is ${board.getWinner() === -1 ? "X" : "O"}`;
                 } else if (board.staleMate()) {
+                    gameFinished = true;
                     document.querySelector(".overlay").textContent = "Stalemate!";
+                } else {
+                    gameFinished = false;
                 }
             };
 
             document.addEventListener(
                 "click",
                 async function (evt) {
-                    if (evt.target.tagName === "TD" && currentPlayer === player1) {
+                    if (evt.target.tagName === "TD" && currentPlayer === player1 && !gameFinished) {
                         await player1.createMove(board, +evt.target.getAttribute("data-position"));
 
                         currentPlayer = null;
@@ -188,6 +195,7 @@
                 board = new Board();
                 updateBoard();
                 document.querySelector(".overlay").textContent = "";
+                gameFinished = false;
                 currentPlayer = player1;
                 updateCurrentPlayer();
             });
